@@ -3578,9 +3578,11 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
       if (!matMesh) throw new Error('no trampoline mesh');
       // size from the trampoline alone (the ball starts mid-air): diameter TRAMP_D, feet on the floor, centred
       const hold = new THREE.Group(); hold.add(root); hold.updateMatrixWorld(true);
-      let bb = new THREE.Box3().setFromObject(matMesh), sz = bb.getSize(new V3());
+      // measured from the real vertices: the mesh's bounding box also spans the mat's dip morph target, which would lift the legs off the floor
+      const vBox = () => { const b = new THREE.Box3(), q = new V3(), pa = matMesh.geometry.attributes.position; for (let i = 0; i < pa.count; i++) b.expandByPoint(q.fromBufferAttribute(pa, i).applyMatrix4(matMesh.matrixWorld)); return b; };
+      let bb = vBox(), sz = bb.getSize(new V3());
       hold.scale.setScalar(TRAMP_D / Math.max(sz.x, sz.z)); hold.updateMatrixWorld(true);
-      bb = new THREE.Box3().setFromObject(matMesh); const c = bb.getCenter(new V3());
+      bb = vBox(); const c = bb.getCenter(new V3());
       hold.position.set(-c.x, -bb.min.y, -c.z); hold.updateMatrixWorld(true);
       // height of the mat at its centre (rest shape)
       const p = matMesh.geometry.attributes.position, v = new V3(); let ys = 0, n = 0;
@@ -4084,7 +4086,6 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
     updateSmoke(raw, time);
     music.tick(raw);
     if (bag) bag.rotation.z = Math.sin(time * .8) * .025;
-    if (hatDeco) hatDeco.rotation.z = .12 + Math.sin(time * .9 + 1.3) * .02;
     poseMusician(time, raw);
     poseSax(time, raw);
     poseWorkers(time, raw);
