@@ -1408,7 +1408,7 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
     scene.traverse(o => {
       if (!(o.isMesh || o.isPoints || o.isLine || o.isSprite)) return;
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
-      if (o.isPoints || o.isLine || o.isSprite || !m || m.transparent || m.colorWrite === false || m.blending === THREE.AdditiveBlending || m.isShaderMaterial || m.isMeshBasicMaterial) aoHidden.push(o);
+      if (o.userData.noAO || o.isPoints || o.isLine || o.isSprite || !m || m.transparent || m.colorWrite === false || m.blending === THREE.AdditiveBlending || m.isShaderMaterial || m.isMeshBasicMaterial) aoHidden.push(o);
     });
   }
   if (POST) {
@@ -3574,7 +3574,8 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
       return new Promise((res, rej) => new THREE.GLTFLoader().parse(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength), '', res, rej));
     }).then(g => {
       const root = g.scene; let matMesh = null, ball = null;
-      root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.raycast = () => {}; if (o.morphTargetInfluences) matMesh = o; } if (/^beachBall$/i.test(o.name)) ball = o; });
+      // noAO: the AO pre-pass can't apply the mat's morph target, so its occlusion would trail the bouncing mat as a ghost
+      root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.raycast = () => {}; o.userData.noAO = true; if (o.morphTargetInfluences) matMesh = o; } if (/^beachBall$/i.test(o.name)) ball = o; });
       if (!matMesh) throw new Error('no trampoline mesh');
       // size from the trampoline alone (the ball starts mid-air): diameter TRAMP_D, feet on the floor, centred
       const hold = new THREE.Group(); hold.add(root); hold.updateMatrixWorld(true);
