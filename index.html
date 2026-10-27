@@ -1402,9 +1402,10 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
       if (!m || m.userData.envDim || m.envMapIntensity === undefined) return; m.userData.envDim = true;
       if ((m.metalness || 0) < .5) m.envMapIntensity *= ENV_NONMETAL; }); });
   }
+  let dimAge = 0;
   function aoCollect() {
     aoHidden = [];
-    dimEnv();
+    if (dimAge++ % 4 === 0) dimEnv();
     scene.traverse(o => {
       if (!(o.isMesh || o.isPoints || o.isLine || o.isSprite)) return;
       const m = Array.isArray(o.material) ? o.material[0] : o.material;
@@ -1437,7 +1438,7 @@ body.touring .hud .title, body.touring .lil-gui.root { opacity: 0; pointer-event
           const u = this.ssaoMaterial.uniforms;
           u.cameraProjectionMatrix.value.copy(camera.projectionMatrix); u.cameraInverseProjectionMatrix.value.copy(camera.projectionMatrixInverse);
           u.cameraNear.value = camera.near; u.cameraFar.value = camera.far;
-          if (++aoListAge > 30) { aoCollect(); aoListAge = 0; }
+          aoCollect(); // every frame: a stale list let invisible pick proxies (big cylinders round the characters) cast AO shadows
           const was = aoHidden.map(o => o.visible); aoHidden.forEach(o => o.visible = false);
           const fog = scene.fog, bg = scene.background; scene.fog = null; scene.background = null;
           this.renderOverride(rdr, this.normalMaterial, this.normalRenderTarget, 0x7777ff, 1.0);
